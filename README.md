@@ -49,25 +49,30 @@ ASCII — see below.
   up to this pipeline — `caption.mode` only accepts `off`. The
   circular/glyph-set approach it would need to integrate with didn't exist
   when that code was written; folding it back in is open work.
-- **Nix/home-manager module**: written but **not built** (no Nix in this
-  dev environment). `nix/package.nix` sets up a private fontconfig via
-  `makeFontsConf` pointing at the Noto CJK/Thai/Myanmar/Sinhala/Khmer and
-  DejaVu Sans packages it needs — the exact nixpkgs attribute names for
-  broad Noto script coverage are flagged as unverified in a comment there;
-  confirm with `fc-list` in a `nix shell` before relying on it. The Python
-  pipeline itself was fully tested directly in this container, including a
-  real Bing fetch through the complete render → publish → `prev`/`next`
-  path.
+- **Nix/home-manager module**: `nix build .#default` succeeds and the
+  resulting `glyphscape` binary runs; `nix/package.nix`'s private fontconfig
+  (`makeFontsConf` over `noto-fonts-cjk-sans`, `noto-fonts`, and
+  `dejavu_fonts`) correctly resolves all five scripts (`fc-match` under
+  `FONTCONFIG_FILE` finds `Noto Sans {CJK SC,Thai,Myanmar,Sinhala,Khmer}` as
+  expected, no DejaVu fallback). The home-manager module itself (systemd
+  timer, wallpaper registration) is still unexercised end-to-end on a real
+  GNOME session. The Python pipeline was fully tested directly in this
+  container, including a real Bing fetch through the complete render →
+  publish → `prev`/`next` path.
 - **GNOME reload on atomic rename**: still unverified (no GNOME session
   here). Fallback if it doesn't pick up the `mv`: toggle
   `picture-uri`/`picture-uri-dark` via `gsettings` between two filenames.
 
 ## Installation (NixOS / home-manager)
 
+Add this to **your own** system or home-manager flake — not this repo's
+`flake.nix` (that one already exists here and just defines the package/module
+being consumed below):
+
 ```nix
-# flake.nix
+# your flake.nix, e.g. /etc/nixos/flake.nix or your dotfiles' flake.nix
 {
-  inputs.glyphscape.url = "path:/path/to/this/repo"; # or a git url once pushed
+  inputs.glyphscape.url = "github:daniel-dalegowski/glyphscape";
 
   outputs = { home-manager, glyphscape, ... }: {
     homeConfigurations.you = home-manager.lib.homeManagerConfiguration {
@@ -88,6 +93,26 @@ registers the wallpaper in `~/.local/share/gnome-background-properties/`, and
 sets up `systemd --user` timer `glyphscape.timer` (daily, catches up after
 sleep, plus a run ~2min after login). Pick **Glyphscape** once in
 Settings → Appearance.
+
+### Without a flake (classic `configuration.nix` / `home.nix`)
+
+`nix/module.nix` is a plain home-manager module — it doesn't need to come
+through a flake input. If your system is set up the traditional
+(channel-based) way, with `home-manager.users.<you> = import ./home.nix;` in
+`configuration.nix`, just import it by path in `home.nix`:
+
+```nix
+{ config, pkgs, ... }:
+{
+  imports = [ /path/to/glyphscape/nix/module.nix ];
+
+  programs.glyphscape.enable = true;
+  # programs.glyphscape.settings = { ... };  # see Configuration below
+}
+```
+
+Then `sudo nixos-rebuild switch` as usual — no separate `home-manager switch`
+needed, since home-manager is wired in as a NixOS module here.
 
 ## Manual commands
 
