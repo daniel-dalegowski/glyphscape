@@ -49,8 +49,13 @@ python3Packages.buildPythonApplication {
   ];
 
   makeWrapperArgs = [
-    "--prefix PATH : ${lib.makeBinPath [ chafa fontconfig ]}"
-    "--set FONTCONFIG_FILE ${fontsConf}"
+    "--prefix"
+    "PATH"
+    ":"
+    (lib.makeBinPath [ chafa fontconfig ])
+    "--set"
+    "FONTCONFIG_FILE"
+    fontsConf
   ];
 
   # No test suite yet; the pipeline is exercised via `glyphscape render`.

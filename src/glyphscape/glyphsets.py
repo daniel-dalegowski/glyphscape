@@ -105,7 +105,11 @@ def resolve_font(spec: str) -> tuple[str, int]:
         ).stdout
         path, _, idx = out.partition("|")
         if path:
-            return path, int(idx or 0)
+            # fontconfig packs a variable-font named-instance index into the
+            # high bits for formats like .ttc (e.g. 262146 = instance 4, face
+            # 2); fontTools' fontNumber only wants the low 16 bits (the
+            # actual TTC face index).
+            return path, int(idx or 0) & 0xFFFF
     raise FileNotFoundError(f"could not resolve font {spec!r} (no fc-match, and not a file path)")
 
 
