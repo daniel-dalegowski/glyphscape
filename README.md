@@ -62,6 +62,15 @@ ASCII — see below.
 - **GNOME reload on atomic rename**: still unverified (no GNOME session
   here). Fallback if it doesn't pick up the `mv`: toggle
   `picture-uri`/`picture-uri-dark` via `gsettings` between two filenames.
+- **Glyph content**: each cell's glyph is picked independently by local
+  image density, with no sequencing between cells, so the renderer has no
+  mechanism to form words, phrases, or slurs. Only the `symbols` pool
+  (`ROUND_SYMBOL_CHARS` in `glyphsets.py`) is curated by shape; the
+  CJK/Khmer/Thai/Myanmar/Sinhala pools are filtered only by font coverage and
+  ink density, with no shape awareness. The CJK pool in particular only
+  sparsely samples its block (every 61st codepoint across roughly 20,000,
+  `SCRIPTS["cjk"]` in `glyphsets.py`), so most individual characters in it
+  simply aren't in the candidate pool at all.
 
 ## Installation (NixOS / home-manager)
 
