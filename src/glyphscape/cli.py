@@ -17,6 +17,40 @@ from .sources.base import validate_and_normalize
 log = logging.getLogger("glyphscape")
 
 
+def _parse_bool(raw: str) -> bool:
+    if raw.lower() in ("true", "1", "yes", "on"):
+        return True
+    if raw.lower() in ("false", "0", "no", "off"):
+        return False
+    raise ValueError(f"not a boolean: {raw!r}")
+
+
+def _apply_overrides(config, overrides: list[str]) -> None:
+    settable = config_mod.settable_keys()
+    for item in overrides:
+        if "=" not in item:
+            raise SystemExit(f"--set expects key=value, got {item!r}")
+        key, raw_value = (part.strip() for part in item.split("=", 1))
+        attr = settable.get(key)
+        if attr is None:
+            raise SystemExit(f"unknown config key for --set: {key!r}")
+        current = getattr(config, attr)
+        try:
+            if isinstance(current, bool):
+                value = _parse_bool(raw_value)
+            elif isinstance(current, int):
+                value = int(raw_value)
+            elif isinstance(current, float):
+                value = float(raw_value)
+            elif isinstance(current, list):
+                value = [v.strip() for v in raw_value.split(",") if v.strip()]
+            else:
+                value = raw_value
+        except ValueError as exc:
+            raise SystemExit(f"--set {key}: {exc}") from exc
+        setattr(config, attr, value)
+
+
 def _setup_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -115,6 +149,14 @@ def _cmd_step(args, config, direction: int) -> int:
 def main(argv=None) -> int:
     _setup_logging()
     parser = argparse.ArgumentParser(prog="glyphscape")
+    parser.add_argument(
+        "--set",
+        dest="overrides",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="override a config value, e.g. --set circle.enabled=false (repeatable)",
+    )
     sub = parser.add_subparsers(dest="command")
 
     sub.add_parser("now", help="force a fresh fetch and render today")
@@ -130,6 +172,8 @@ def main(argv=None) -> int:
 
     args = parser.parse_args(argv)
     config = config_mod.load()
+    if args.overrides:
+        _apply_overrides(config, args.overrides)
 
     if args.command == "now":
         return _cmd_run(config, force=True)

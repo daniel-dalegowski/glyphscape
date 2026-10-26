@@ -146,7 +146,7 @@ on NixOS, or hand-edited otherwise.
 | `glyph.density_gamma` | `1.5` | `level ** gamma`; >1 widens quiet/blank regions |
 | `glyph.max_horizontal_run` | `2` | resample rather than repeat one glyph >N times in a row |
 | `glyph.blank_floor` | `0.06` | cells below this normalized detail are candidates to stay blank |
-| `glyph.glyph_color` | `"bg"` | which of chafa's two per-cell colors becomes the glyph ink |
+| `glyph.color_source` | `"bg"` | which of chafa's two per-cell colors (`"bg"` or `"fg"`) becomes the glyph ink |
 | `circle.enabled` | `true` | mask everything outside a circle to black |
 | `circle.radius` | `0.75` | fraction of `min(width,height)/2` |
 | `circle.feather` | `0.0` | `0` = hard edge; `>0` = soft vignette fade at the rim |

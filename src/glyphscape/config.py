@@ -24,7 +24,7 @@ DEFAULTS = {
         "max_horizontal_run": 2,
         "blank_floor": 0.06,
         "density_gamma": 1.5,
-        "glyph_color": "bg",
+        "color_source": "bg",
         "seed": 0,
     },
     "circle": {
@@ -38,6 +38,31 @@ DEFAULTS = {
         "lines": "name+credit",
     },
 }
+
+
+# Keys where the Config attribute name doesn't follow the "<section>_<key>"
+# convention that settable_keys() otherwise derives automatically. Empty for
+# now -- kept as the escape hatch for the next irregularly-named field.
+_ATTR_NAME_OVERRIDES = {}
+
+
+def settable_keys() -> dict[str, str]:
+    """Dotted config.toml path -> flattened Config attribute name, for every
+    scalar/list leaf in DEFAULTS. Backs `glyphscape --set key=value` so its
+    accepted keys stay in sync with DEFAULTS instead of being hand-copied
+    elsewhere. Dict-valued leaves (e.g. glyph.weights) are skipped -- too
+    structured for a single --set value."""
+    mapping = {}
+    for key, value in DEFAULTS.items():
+        if not isinstance(value, dict):
+            mapping[key] = key
+            continue
+        for subkey, subvalue in value.items():
+            if isinstance(subvalue, dict):
+                continue
+            dotted = f"{key}.{subkey}"
+            mapping[dotted] = _ATTR_NAME_OVERRIDES.get(dotted, f"{key}_{subkey}")
+    return mapping
 
 
 @dataclass
@@ -113,7 +138,7 @@ def load() -> Config:
         ),
         glyph_blank_floor=float(glyph.get("blank_floor", DEFAULTS["glyph"]["blank_floor"])),
         glyph_density_gamma=float(glyph.get("density_gamma", DEFAULTS["glyph"]["density_gamma"])),
-        glyph_color_source=str(glyph.get("glyph_color", DEFAULTS["glyph"]["glyph_color"])),
+        glyph_color_source=str(glyph.get("color_source", DEFAULTS["glyph"]["color_source"])),
         glyph_seed=int(glyph.get("seed", DEFAULTS["glyph"]["seed"])),
         circle_enabled=bool(circle.get("enabled", DEFAULTS["circle"]["enabled"])),
         circle_radius=float(circle.get("radius", DEFAULTS["circle"]["radius"])),
