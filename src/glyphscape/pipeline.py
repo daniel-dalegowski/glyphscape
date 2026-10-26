@@ -29,6 +29,15 @@ def _dim(rgb: tuple[float, float, float], factor: float) -> tuple[float, float, 
     return tuple(v * factor for v in rgb)
 
 
+def _blend_toward(
+    rgb: tuple[float, float, float], bg: tuple[float, float, float], factor: float
+) -> tuple[float, float, float]:
+    """Fade ink toward bg as factor goes from 1 (full ink) to 0 (pure bg) --
+    used for the circle's feathered edge so it fades into the configured
+    background instead of always fading to black."""
+    return tuple(v * factor + b * (1 - factor) for v, b in zip(rgb, bg))
+
+
 def render_image(image_path: Path, meta: dict | None, config):
     resolution = grid.parse_resolution(config.resolution)
     cell = config.cell_wh
@@ -121,8 +130,10 @@ def render_image(image_path: Path, meta: dict | None, config):
     if active_palette:
         ink_grid = palette_mod.quantize(ink_grid, active_palette, dither=True)
     if max_r is not None:
+        bg_rgb = config.background_rgb
         ink_grid = [
-            [_dim(ink_grid[r][c], mask_grid[r][c]) for c in range(cols)] for r in range(rows)
+            [_blend_toward(ink_grid[r][c], bg_rgb, mask_grid[r][c]) for c in range(cols)]
+            for r in range(rows)
         ]
 
     final_grid = [
@@ -138,7 +149,9 @@ def render_image(image_path: Path, meta: dict | None, config):
         )
 
     margin = (mx, my)
-    img = rasterize.rasterize(final_grid, cell, (res_w, res_h), margin, calibration)
+    img = rasterize.rasterize(
+        final_grid, cell, (res_w, res_h), margin, calibration, bg_color=config.background_rgb
+    )
 
     img_dark = None
     if config.dark_variant:
@@ -149,7 +162,9 @@ def render_image(image_path: Path, meta: dict | None, config):
             ]
             for r, row in enumerate(final_grid)
         ]
-        img_dark = rasterize.rasterize(dark_grid, cell, (res_w, res_h), margin, calibration)
+        img_dark = rasterize.rasterize(
+            dark_grid, cell, (res_w, res_h), margin, calibration, bg_color=config.background_rgb
+        )
 
     return img, img_dark
 

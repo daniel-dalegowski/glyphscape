@@ -16,6 +16,7 @@ DEFAULTS = {
     "local_folder": "~/Pictures/glyphscape",
     "color": "full",
     "palette": "qud",
+    "background": "#000000",
     "glyph": {
         "script": "mixed",
         "include_symbols": True,
@@ -75,6 +76,7 @@ class Config:
     local_folder: str
     color: str
     palette: str
+    background: str
     glyph_script: str
     glyph_include_symbols: bool
     glyph_weights: dict
@@ -96,6 +98,17 @@ class Config:
     def cell_wh(self) -> tuple[int, int]:
         w, h = self.cell.lower().split("x")
         return int(w), int(h)
+
+    @property
+    def background_rgb(self) -> tuple[int, int, int]:
+        return _parse_hex_color(self.background)
+
+
+def _parse_hex_color(value: str) -> tuple[int, int, int]:
+    hexpart = value.strip().lstrip("#")
+    if len(hexpart) != 6:
+        raise ValueError(f"expected a 6-digit hex color like '#223344', got {value!r}")
+    return tuple(int(hexpart[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def _deep_merge(base: dict, override: dict) -> dict:
@@ -129,6 +142,7 @@ def load() -> Config:
         local_folder=str(data["local_folder"]),
         color=str(data["color"]),
         palette=str(data["palette"]),
+        background=str(data["background"]),
         glyph_script=str(glyph.get("script", DEFAULTS["glyph"]["script"])),
         glyph_include_symbols=bool(glyph.get("include_symbols", DEFAULTS["glyph"]["include_symbols"])),
         glyph_weights=dict(glyph.get("weights", {})),

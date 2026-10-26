@@ -29,7 +29,8 @@ ASCII — see below.
    quantized to the configured fixed palette with Floyd-Steinberg dithering
    across the cell grid, so flat color patches become woven texture instead
    of solid blocks (`palette.py`).
-5. **Framing** — a circle masks everything outside it to true black. Its
+5. **Framing** — a circle masks everything outside it to the configured
+   `background` color (black by default). Its
    vertical position is auto-searched for the strongest light/dark split
    inside it (sky meeting land reads far better than a flat crop); if even
    the best position is low-contrast, the density curve eases back so a
@@ -149,6 +150,7 @@ on NixOS, or hand-edited otherwise.
 | `local_folder` | `~/Pictures/glyphscape` | offline fallback source folder |
 | `color` | `"full"` | legacy chafa color remap, only used when `palette = "none"` |
 | `palette` | `"qud"` | `"qud"` (18-color Caves of Qud palette, dithered) or `"none"` |
+| `background` | `"#000000"` | hex color behind the glyph grid — same color whether `circle.enabled` is on or off, and the circle's feathered edge (`circle.feather`) fades into it rather than to black |
 | `glyph.script` | `"mixed"` | `cjk`/`khmer`/`thai`/`myanmar`/`sinhala`/`braille`/`symbols`/`mixed` |
 | `glyph.include_symbols` | `true` | blend round dots/bullets/asterisks into every script's density bins |
 | `glyph.weights` | `{}` | per-script sampling weight overrides (e.g. `{braille = 0.1}`) |

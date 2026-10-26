@@ -14,7 +14,8 @@ def rasterize(
     resolution: tuple[int, int],
     margin: tuple[int, int],
     calibration: dict[tuple[str, int], str],
-    bg_grid: list[list] | None = None,  # optional per-cell fill; None = pure black canvas
+    bg_grid: list[list] | None = None,  # optional per-cell fill; None = flat bg_color canvas
+    bg_color: tuple[int, int, int] = (0, 0, 0),
 ) -> Image.Image:
     cell_w, cell_h = cell
     res_w, res_h = resolution
@@ -23,7 +24,7 @@ def rasterize(
     cols = len(cell_grid[0]) if rows else 0
 
     fonts = FontBook(cell, calibration)
-    img = Image.new("RGB", (res_w, res_h), (0, 0, 0))
+    img = Image.new("RGB", (res_w, res_h), bg_color)
     draw = ImageDraw.Draw(img)
 
     for r in range(rows):
