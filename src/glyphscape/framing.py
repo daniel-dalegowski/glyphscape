@@ -10,13 +10,22 @@ boundary here')."""
 
 from __future__ import annotations
 
-from PIL import Image
+from PIL import Image, ImageStat
+
+from .compose import luminance
 
 # Band-mean spread (0-255 grayscale) below which a photo is considered low
 # contrast everywhere -- density_gamma gets eased toward 1.0 proportionally
 # so a genuinely flat/misty source doesn't just vanish under a gamma tuned
 # for crisp landscapes (see pipeline.py).
 LOW_CONTRAST_THRESHOLD = 40.0
+
+# background = "auto" derives the wallpaper backdrop from that day's photo
+# instead of a fixed color -- its average color, darkened, capped at a
+# luminance ceiling so it never gets bright enough to hurt desktop icon/text
+# contrast (same concern CAPTION_BG_DARKEN addresses for the caption box).
+AUTO_BACKGROUND_DARKEN = 0.35
+AUTO_BACKGROUND_MAX_LUMINANCE = 40.0
 
 
 def band_contrast_score(
@@ -85,6 +94,23 @@ def eased_density_gamma(
         return configured_gamma
     factor = max(0.0, min(1.0, contrast_score / threshold))
     return 1.0 + (configured_gamma - 1.0) * factor
+
+
+def auto_background_color(
+    image: Image.Image,
+    darken: float = AUTO_BACKGROUND_DARKEN,
+    max_luminance: float = AUTO_BACKGROUND_MAX_LUMINANCE,
+) -> tuple[int, int, int]:
+    """Average color of the source photo, darkened into a plausible
+    wallpaper backdrop. Ties the circle's fill and feathered edge to that
+    day's photo instead of a fixed color; the luminance ceiling keeps it
+    dark regardless of how bright the photo itself is."""
+    mean = ImageStat.Stat(image.convert("RGB")).mean
+    darkened = tuple(v * darken for v in mean)
+    lum = luminance(darkened)
+    if lum > max_luminance:
+        darkened = tuple(v * (max_luminance / lum) for v in darkened)
+    return tuple(min(255, max(0, round(v))) for v in darkened)
 
 
 def circle_mask_value(

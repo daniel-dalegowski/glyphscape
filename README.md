@@ -150,7 +150,7 @@ on NixOS, or hand-edited otherwise.
 | `local_folder` | `~/Pictures/glyphscape` | offline fallback source folder |
 | `color` | `"full"` | legacy chafa color remap, only used when `palette = "none"` |
 | `palette` | `"qud"` | `"qud"` (18-color Caves of Qud palette, dithered) or `"none"` |
-| `background` | `"#000000"` | hex color behind the glyph grid — same color whether `circle.enabled` is on or off, and the circle's feathered edge (`circle.feather`) fades into it rather than to black |
+| `background` | `"#000000"` | hex color behind the glyph, or `"auto"` to derive it from that day's photo (average color, darkened, capped at a luminance ceiling — `framing.auto_background_color`), or `"palette"` for the darkest color in the active `palette` (`palette.darkest_color`, falls back to `"auto"` when `palette = "none"`) — same color whether `circle.enabled` is on or off, and the circle's feathered edge (`circle.feather`) fades into it rather than to black |
 | `glyph.script` | `"mixed"` | `cjk`/`khmer`/`thai`/`myanmar`/`sinhala`/`braille`/`symbols`/`mixed` |
 | `glyph.include_symbols` | `true` | blend round dots/bullets/asterisks into every script's density bins |
 | `glyph.weights` | `{}` | per-script sampling weight overrides (e.g. `{braille = 0.1}`) |

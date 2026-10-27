@@ -83,6 +83,15 @@ def render_image(image_path: Path, meta: dict | None, config):
             density_gamma = framing.eased_density_gamma(density_gamma, contrast_score)
             log.info("circle center y=%.0f (contrast score %.1f)", circle_center[1], contrast_score)
 
+    bg_rgb = config.background_rgb
+    if bg_rgb is None:
+        if config.background.strip().lower() == "palette" and active_palette:
+            bg_rgb = palette_mod.darkest_color(active_palette)
+            log.info("palette background color #%02x%02x%02x", *bg_rgb)
+        else:
+            bg_rgb = framing.auto_background_color(src_for_contrast)
+            log.info("auto background color #%02x%02x%02x", *bg_rgb)
+
     weights = {**glyphsets.DEFAULT_WEIGHTS, **config.glyph_weights}
     rng = random.Random(config.glyph_seed)
 
@@ -130,7 +139,6 @@ def render_image(image_path: Path, meta: dict | None, config):
     if active_palette:
         ink_grid = palette_mod.quantize(ink_grid, active_palette, dither=True)
     if max_r is not None:
-        bg_rgb = config.background_rgb
         ink_grid = [
             [_blend_toward(ink_grid[r][c], bg_rgb, mask_grid[r][c]) for c in range(cols)]
             for r in range(rows)
@@ -150,7 +158,7 @@ def render_image(image_path: Path, meta: dict | None, config):
 
     margin = (mx, my)
     img = rasterize.rasterize(
-        final_grid, cell, (res_w, res_h), margin, calibration, bg_color=config.background_rgb
+        final_grid, cell, (res_w, res_h), margin, calibration, bg_color=bg_rgb
     )
 
     img_dark = None
@@ -163,7 +171,7 @@ def render_image(image_path: Path, meta: dict | None, config):
             for r, row in enumerate(final_grid)
         ]
         img_dark = rasterize.rasterize(
-            dark_grid, cell, (res_w, res_h), margin, calibration, bg_color=config.background_rgb
+            dark_grid, cell, (res_w, res_h), margin, calibration, bg_color=bg_rgb
         )
 
     return img, img_dark

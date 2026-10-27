@@ -6,6 +6,8 @@ woven texture instead of solid blocks)."""
 
 from __future__ import annotations
 
+from .compose import luminance
+
 # Caves of Qud's 18 fixed colors, verified against
 # wiki.cavesofqud.com/wiki/Modding:Colors_%26_Object_Rendering (2026-10-24).
 QUD_PALETTE_NAMED = {
@@ -24,6 +26,15 @@ def _hex_to_rgb(h: str) -> tuple[int, int, int]:
 
 QUD_PALETTE = [_hex_to_rgb(v) for v in QUD_PALETTE_NAMED.values()]
 PALETTES = {"qud": QUD_PALETTE}
+
+
+def darkest_color(palette: list) -> tuple[int, int, int]:
+    """Lowest-luminance entry in a palette -- used for background = "palette"
+    so the backdrop always harmonizes with that palette's ink colors. No
+    per-palette curation needed, but a palette with no genuinely dark color
+    (e.g. a light theme) will still return its darkest-available entry,
+    which may not read as "dark" at all."""
+    return min(palette, key=luminance)
 
 
 def nearest_color(rgb, palette: list) -> tuple[int, int, int]:

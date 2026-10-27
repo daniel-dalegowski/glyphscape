@@ -100,7 +100,12 @@ class Config:
         return int(w), int(h)
 
     @property
-    def background_rgb(self) -> tuple[int, int, int]:
+    def background_rgb(self) -> tuple[int, int, int] | None:
+        """None signals a non-hex mode ('auto': derive from that day's
+        photo, or 'palette': darkest color of the active palette) that
+        the pipeline resolves at render time."""
+        if self.background.strip().lower() in ("auto", "palette"):
+            return None
         return _parse_hex_color(self.background)
 
 
