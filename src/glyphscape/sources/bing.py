@@ -29,8 +29,9 @@ def fetch(session: requests.Session, workdir: Path) -> tuple[Path, dict]:
 
     dest = workdir / "source.jpg"
     for suffix in ("_UHD.jpg", "_1920x1080.jpg"):
+        image_url = base_url + suffix
         try:
-            download(base_url + suffix, dest)
+            download(image_url, dest)
             break
         except (requests.RequestException, SourceError):
             continue
@@ -46,13 +47,14 @@ def fetch(session: requests.Session, workdir: Path) -> tuple[Path, dict]:
         title = copyright_text or image.get("title", "Unknown location")
         credit = ""
 
-    link = image.get("copyrightlink", "https://www.bing.com")
+    # copyrightlink is a Bing search-results page, not the image; cite the
+    # exact file we downloaded instead.
     meta = {
         "title": title,
         "location": "",
         "caption": image.get("title", title),
         "credit": credit,
-        "source_url": link,
+        "source_url": image_url,
         "source": "bing",
     }
     return dest, meta
