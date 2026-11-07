@@ -61,11 +61,21 @@ def band_contrast_score(
     return max(means) - min(means)
 
 
+def apply_bottom_clearance(cy: float, radius: float, res_h: float, clearance: float) -> float:
+    """Nudges cy upward (never downward) so the circle's bottom edge
+    leaves at least `clearance` px before the image's bottom edge -- room
+    for something placed below it afterwards (e.g. Glyphcast's weather
+    overlay) to sit there at full size instead of having to shrink. A
+    no-op when clearance is 0 (the default) or already satisfied."""
+    return min(cy, res_h - clearance - radius)
+
+
 def find_best_circle_center(
     image: Image.Image,
     resolution: tuple[int, int],
     radius_frac: float,
     y_candidates: tuple[float, ...] = (0.40, 0.45, 0.5, 0.55, 0.60),
+    bottom_clearance: float = 0.0,
 ) -> tuple[tuple[float, float], float]:
     res_w, res_h = resolution
     radius = min(res_w, res_h) / 2 * radius_frac
@@ -75,8 +85,15 @@ def find_best_circle_center(
     if sample.size != resolution:
         sample = sample.resize(resolution)
 
-    best_center, best_score = (cx, res_h / 2), -1.0
-    for fy in y_candidates:
+    # Only the candidates that leave the requested clearance are eligible
+    # for the contrast search -- if none do (the clearance demanded is
+    # larger than any candidate can satisfy), the topmost candidate is the
+    # best available compromise, since it overruns the least.
+    max_cy = res_h - bottom_clearance - radius
+    eligible = [fy for fy in y_candidates if res_h * fy <= max_cy] or [min(y_candidates)]
+
+    best_center, best_score = (cx, res_h * eligible[0]), -1.0
+    for fy in eligible:
         cy = res_h * fy
         score = band_contrast_score(sample, (cx, cy), radius)
         if score > best_score:

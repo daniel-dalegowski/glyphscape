@@ -39,6 +39,15 @@ def _atomic_write_text(text: str, dest: Path) -> None:
         raise
 
 
+def write_geometry(geometry: dict, dest: Path) -> None:
+    """Sidecar describing exactly how this wallpaper was rendered -- circle
+    center/radius (if any), resolution, resolved background color, and the
+    full resolved config -- so any other tool compositing onto this image
+    (e.g. Glyphcast's weather overlay) can know where the art actually is
+    instead of re-deriving it by scanning pixels."""
+    _atomic_write_text(json.dumps(geometry, indent=2) + "\n", dest)
+
+
 def write_source_text(meta: dict, dest: Path) -> None:
     """Human-readable sidecar next to the wallpaper, so the image's source
     is a quick `cat` away rather than buried in the journal or meta.json."""

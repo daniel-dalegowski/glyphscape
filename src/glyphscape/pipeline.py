@@ -78,10 +78,16 @@ def render_image(image_path: Path, meta: dict | None, config):
         max_r = min(res_w, res_h) / 2 * config.circle_radius
         if config.circle_auto_contrast:
             circle_center, contrast_score = framing.find_best_circle_center(
-                src_for_contrast, (res_w, res_h), config.circle_radius
+                src_for_contrast, (res_w, res_h), config.circle_radius,
+                bottom_clearance=config.circle_bottom_clearance,
             )
             density_gamma = framing.eased_density_gamma(density_gamma, contrast_score)
             log.info("circle center y=%.0f (contrast score %.1f)", circle_center[1], contrast_score)
+        else:
+            circle_center = (
+                circle_center[0],
+                framing.apply_bottom_clearance(circle_center[1], max_r, res_h, config.circle_bottom_clearance),
+            )
 
     bg_rgb = config.background_rgb
     if bg_rgb is None:
@@ -91,6 +97,21 @@ def render_image(image_path: Path, meta: dict | None, config):
         else:
             bg_rgb = framing.auto_background_color(src_for_contrast)
             log.info("auto background color #%02x%02x%02x", *bg_rgb)
+
+    geometry = {
+        "resolution": [res_w, res_h],
+        "background_rgb": list(bg_rgb),
+        "circle": {
+            "enabled": max_r is not None,
+            "center": list(circle_center) if max_r is not None else None,
+            "radius": max_r,
+            "feather": config.circle_feather if max_r is not None else None,
+        },
+        # The full resolved config (defaults + user overrides) this render
+        # used -- lets a consumer reconstruct or sanity-check the rest of
+        # the rendering decisions without a second source of truth for them.
+        "config": config.raw,
+    }
 
     weights = {**glyphsets.DEFAULT_WEIGHTS, **config.glyph_weights}
     rng = random.Random(config.glyph_seed)
@@ -174,7 +195,7 @@ def render_image(image_path: Path, meta: dict | None, config):
             dark_grid, cell, (res_w, res_h), margin, calibration, bg_color=bg_rgb
         )
 
-    return img, img_dark
+    return img, img_dark, geometry
 
 
 def run_daily(config, force: bool = False) -> bool:
@@ -201,10 +222,11 @@ def run_daily(config, force: bool = False) -> bool:
     )
 
     try:
-        img, img_dark = render_image(image_path, meta, config)
+        img, img_dark, geometry = render_image(image_path, meta, config)
     except Exception:
         log.exception("render failed; leaving current wallpaper in place")
         return False
+    geometry["date"] = today
 
     publish.atomic_write_png(img, paths.live_png())
     publish.atomic_write_png(img, workdir / "live.png")
@@ -214,6 +236,8 @@ def run_daily(config, force: bool = False) -> bool:
     publish.write_meta(meta, workdir / "meta.json")
     publish.write_source_text(meta, paths.live_source_txt())
     publish.write_source_text(meta, workdir / "source.txt")
+    publish.write_geometry(geometry, paths.live_geometry_json())
+    publish.write_geometry(geometry, workdir / "geometry.json")
 
     paths.pointer_file().write_text(today)
     archive.prune(config.keep_days)

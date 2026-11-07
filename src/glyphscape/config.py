@@ -33,6 +33,12 @@ DEFAULTS = {
         "radius": 0.75,
         "feather": 0.0,
         "auto_contrast": True,
+        # Pixels of guaranteed empty space below the circle's bottom edge --
+        # 0 keeps the old behavior (purely contrast-driven vertical
+        # placement, which can put the circle anywhere from 10% to 60% down
+        # the frame). Set this to reserve room for something placed below
+        # the circle afterwards, e.g. Glyphcast's weather overlay.
+        "bottom_clearance": 0,
     },
     "caption": {
         "mode": "off",
@@ -90,6 +96,7 @@ class Config:
     circle_radius: float
     circle_feather: float
     circle_auto_contrast: bool
+    circle_bottom_clearance: float
     caption_mode: str
     caption_lines: str
     raw: dict = field(default_factory=dict, repr=False)
@@ -163,6 +170,9 @@ def load() -> Config:
         circle_radius=float(circle.get("radius", DEFAULTS["circle"]["radius"])),
         circle_feather=float(circle.get("feather", DEFAULTS["circle"]["feather"])),
         circle_auto_contrast=bool(circle.get("auto_contrast", DEFAULTS["circle"]["auto_contrast"])),
+        circle_bottom_clearance=float(
+            circle.get("bottom_clearance", DEFAULTS["circle"]["bottom_clearance"])
+        ),
         caption_mode=str(caption.get("mode", DEFAULTS["caption"]["mode"])),
         caption_lines=str(caption.get("lines", DEFAULTS["caption"]["lines"])),
         raw=data,

@@ -47,3 +47,7 @@ def live_dark_png() -> Path:
 
 def live_source_txt() -> Path:
     return data_dir() / "live-source.txt"
+
+
+def live_geometry_json() -> Path:
+    return data_dir() / "live-geometry.json"

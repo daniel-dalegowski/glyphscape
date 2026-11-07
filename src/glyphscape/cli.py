@@ -87,7 +87,7 @@ def _cmd_render(args, config) -> int:
             "source_url": "",
             "source": "render",
         }
-        img, img_dark = pipeline.render_image(work_copy, meta, config)
+        img, img_dark, geometry = pipeline.render_image(work_copy, meta, config)
 
     out = Path(args.out) if args.out else Path.cwd() / "glyphscape-preview.png"
     publish.atomic_write_png(img, out)
@@ -103,6 +103,8 @@ def _cmd_render(args, config) -> int:
             publish.atomic_write_png(img_dark, paths.live_dark_png())
         meta["date"] = ""
         publish.write_source_text(meta, paths.live_source_txt())
+        geometry["date"] = ""
+        publish.write_geometry(geometry, paths.live_geometry_json())
         log.info("published to %s", paths.live_png())
     return 0
 
@@ -140,6 +142,9 @@ def _cmd_step(args, config, direction: int) -> int:
     source_src = day_dir / "source.txt"
     if source_src.exists():
         paths.live_source_txt().write_text(source_src.read_text())
+    geometry_src = day_dir / "geometry.json"
+    if geometry_src.exists():
+        paths.live_geometry_json().write_text(geometry_src.read_text())
 
     pointer_path.write_text(day)
     log.info("switched wallpaper to %s", day)
